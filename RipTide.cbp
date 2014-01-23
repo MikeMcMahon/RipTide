@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="RipTide" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/RipTide" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/Debug" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="E:/Development/dependencies/SDL2-2.0.1/i686-w64-mingw32/include/SDL2" />
+				</Compiler>
+				<Linker>
+					<Add option="-lmingw32 -lSDL2main -lSDL2" />
+					<Add library="SDL2.dll" />
+					<Add directory="E:/Development/dependencies/SDL2-2.0.1/i686-w64-mingw32/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/RipTide" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add directory="E:/Development/dependencies/SDL2-2.0.1/i686-w64-mingw32/include/SDL2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-lmingw32 -lSDL2main -lSDL2" />
+					<Add directory="E:/Development/dependencies/SDL2-2.0.1/i686-w64-mingw32/lib" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c11" />
+			<Add directory="E:/Development/dependencies/include" />
+		</Compiler>
+		<Linker>
+			<Add option="-lmingw32 -lSDL2main -lSDL2" />
+			<Add library="SDL2.dll" />
+			<Add directory="E:/Development/dependencies/lib" />
+			<Add directory="E:/Development/dependencies/bin" />
+		</Linker>
+		<Unit filename="Game.h" />
+		<Unit filename="SDL_Util.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="SDL_Util.h" />
+		<Unit filename="Snake.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Snake.h" />
+		<Unit filename="assets/sprite.bmp" />
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
