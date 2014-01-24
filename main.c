@@ -8,6 +8,16 @@
 #include "SDL_Util.h"
 #include "Snake.h"
 
+#define DEFAULT_WIDTH 300
+#define DEFAULT_HEIGHT 300
+
+typedef struct {
+        unsigned int width;
+        unsigned int height;
+} GameWindow;
+
+GameWindow game_window;
+
 /****************** FOOD *************************/
 
 typedef struct Food {
@@ -18,11 +28,11 @@ typedef struct Food {
 /**
  * Moves the food to a new location
  */
-void food_move(Food *food, unsigned int window_w, unsigned int window_h)
+void food_move(Food *food)
 {
         srand(time(NULL));
-        food->x = (rand() % (window_w - 10));
-        food->y = (rand() % (window_h - 10));
+        food->x = (rand() % (game_window.width - 10));
+        food->y = (rand() % (game_window.height - 10));
 }
 
 /**
@@ -145,11 +155,11 @@ SDL_Rect *snake_body_at(Snake *snake, int pos)
         return rect;
 }
 
-void snake_move(Body *body, int incr, int window_w, int window_h)
+void snake_move(Body *body, Snake_Move dir, int incr)
 {
         int x = 0;
         int y = 0;
-        switch(body->dir) {
+        switch(dir) {
         case SNAKE_LEFT:
                 x -= incr;
                 break;
@@ -167,29 +177,33 @@ void snake_move(Body *body, int incr, int window_w, int window_h)
         body->value.x += x;
         body->value.y += y;
 
-        if (body->value.x > window_w)
+        if (body->value.x > game_window.width && dir == SNAKE_RIGHT)
                 body->value.x = 0;
-        if (body->value.x < 0)
-                body->value.x = window_w;
+        if (body->value.x < 0 && dir == SNAKE_LEFT)
+                body->value.x = game_window.width;
 
-        if (body->value.y > window_h)
+        if (body->value.y > game_window.height && dir == SNAKE_DOWN)
                 body->value.y = 0;
-        if (body->value.y < 0)
-                body->value.y = window_h;
+        if (body->value.y < 0 && dir == SNAKE_UP)
+                body->value.y = game_window.height;
 }
 
-void snake_handle_input(Snake *snake, Snake_Move dir, int incr, int window_w, int window_h)
+void snake_handle_input(Snake *snake, Snake_Move dir, int incr)
 {
         Body *body = snake->body->next;
-        snake->body->dir = dir;
+        //snake->body->dir = dir;
 
         body = snake_get_tail(snake->body);
         while (body != NULL) {
-                snake_move(body, incr, window_w, window_h);
                 printf("((%d,%d)%d),", body->value.x, body->value.y, body->dir);
 
-                if (body->prev != NULL)
-                        body->dir = body->prev->dir;
+                if (body->prev != NULL) {
+                        body->value.x = body->prev->value.x;
+                        body->value.y = body->prev->value.y;
+                        //body->dir = body->prev->dir;
+                } else {
+                        snake_move(body, dir, incr);
+                }
                 body = body->prev;
         }
         printf("\r\n");
@@ -201,13 +215,13 @@ void snake_handle_input(Snake *snake, Snake_Move dir, int incr, int window_w, in
  * and then adding a new body piece at the end
  **/
 void snake_nibble(Snake *snake, int incr,
-                  Snake_Move dir, int window_w, int window_h)
+                  Snake_Move dir)
 {
         Body *body = snake_get_tail(snake->body);
         int x = body->value.x;
         int y = body->value.y;
         Snake_Move prev_dir = body->dir;
-        snake_handle_input(snake, dir, incr, window_w, window_h);
+        snake_handle_input(snake, dir, incr);
         SDL_Rect r = SDL_CreateRect(10, 10, x, y);
         snake_init_body(&body->next, &r, body);
         body->next->dir = prev_dir;
@@ -261,9 +275,6 @@ int input(SDL_Event *e, Snake_Move *);
 
 int main (int argc, char *args[])
 {
-        int window_width = 300;
-        int window_height = 300;
-
         SDL_Window *window;
         SDL_Renderer *renderer;
         SDL_bool quit = SDL_FALSE;
@@ -271,7 +282,11 @@ int main (int argc, char *args[])
         SDL_Rect draw_rect; //  = malloc(sizeof(struct SDL_Rect));
 
         Food food;
-        food_move(&food, window_width, window_height);
+
+        game_window.width = DEFAULT_WIDTH;
+        game_window.height = DEFAULT_HEIGHT;
+
+        food_move(&food);
 
         /** TIME KEEPING **/
         unsigned int frames_per_second = 60;
@@ -294,9 +309,11 @@ int main (int argc, char *args[])
                 return 1;
 
         if (SDL_CreateWindowAndRenderer(
-                    window_width,
-                    window_height,
-                    SDL_WINDOWPOS_CENTERED | SDL_WINDOW_SHOWN,
+                    game_window.width,
+                    game_window.height,
+                            SDL_WINDOWPOS_CENTERED |
+                            SDL_WINDOW_OPENGL |
+                            SDL_WINDOW_INPUT_GRABBED,
                     &window, &renderer) != 0)
                 return 2;
 
@@ -322,21 +339,14 @@ int main (int argc, char *args[])
                                 snake_handle_input(
                                         &snake,
                                         cur_dir,
-                                        snake_movement,
-                                        window_width,
-                                        window_height);
+                                        snake_movement);
 
                                 if (snake_collides(&snake, &food) == 0) {
-                                        food_move(
-                                                &food,
-                                                window_width,
-                                                window_height);
+                                        food_move(&food);
                                         snake_nibble(
                                                 &snake,
                                                 snake_movement,
-                                                cur_dir,
-                                                window_width,
-                                                window_height);
+                                                cur_dir);
                                 }
                                 snake_lag -= snake_ms_per_update;
                         }
@@ -358,6 +368,10 @@ int main (int argc, char *args[])
         }
 
         snake_free(&snake);
+
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
 
         return 0;
 }
