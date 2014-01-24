@@ -12,8 +12,8 @@
 #define DEFAULT_HEIGHT 300
 
 typedef struct {
-        unsigned int width;
-        unsigned int height;
+        unsigned int w;
+        unsigned int h;
 } GameWindow;
 
 GameWindow game_window;
@@ -31,8 +31,8 @@ typedef struct Food {
 void food_move(Food *food)
 {
         srand(time(NULL));
-        food->x = (rand() % (game_window.width - 10));
-        food->y = (rand() % (game_window.height - 10));
+        food->x = (rand() % (game_window.w - 10));
+        food->y = (rand() % (game_window.h - 10));
 }
 
 /**
@@ -74,7 +74,6 @@ typedef struct Body {
         struct Body *next;
         struct Body *prev;
         SDL_Rect value;
-        Snake_Move dir;
 } Body;
 
 /**
@@ -96,7 +95,6 @@ void snake_init_body(Body **out_body, SDL_Rect *rect, Body *prev)
         new_body->next = NULL;
         new_body->prev = prev;
         new_body->value = *rect;
-        new_body->dir = SNAKE_LEFT;
         *out_body = new_body;
 }
 
@@ -177,30 +175,30 @@ void snake_move(Body *body, Snake_Move dir, int incr)
         body->value.x += x;
         body->value.y += y;
 
-        if (body->value.x > game_window.width && dir == SNAKE_RIGHT)
-                body->value.x = 0;
-        if (body->value.x < 0 && dir == SNAKE_LEFT)
-                body->value.x = game_window.width;
+        if (body->value.x >= game_window.w && dir == SNAKE_RIGHT)
+                body->value.x = (body->value.x - game_window.w);
 
-        if (body->value.y > game_window.height && dir == SNAKE_DOWN)
-                body->value.y = 0;
-        if (body->value.y < 0 && dir == SNAKE_UP)
-                body->value.y = game_window.height;
+        if (body->value.x <= 0 && dir == SNAKE_LEFT)
+                body->value.x = game_window.w + body->value.x;
+
+        if (body->value.y >= game_window.h && dir == SNAKE_DOWN)
+                body->value.y = body->value.y - game_window.h;
+
+        if (body->value.y <= 0 && dir == SNAKE_UP)
+                body->value.y = game_window.h + body->value.y;
 }
 
 void snake_handle_input(Snake *snake, Snake_Move dir, int incr)
 {
         Body *body = snake->body->next;
-        //snake->body->dir = dir;
 
         body = snake_get_tail(snake->body);
         while (body != NULL) {
-                printf("((%d,%d)%d),", body->value.x, body->value.y, body->dir);
+                printf("(%d,%d),", body->value.x, body->value.y);
 
                 if (body->prev != NULL) {
                         body->value.x = body->prev->value.x;
                         body->value.y = body->prev->value.y;
-                        //body->dir = body->prev->dir;
                 } else {
                         snake_move(body, dir, incr);
                 }
@@ -220,11 +218,9 @@ void snake_nibble(Snake *snake, int incr,
         Body *body = snake_get_tail(snake->body);
         int x = body->value.x;
         int y = body->value.y;
-        Snake_Move prev_dir = body->dir;
         snake_handle_input(snake, dir, incr);
         SDL_Rect r = SDL_CreateRect(10, 10, x, y);
         snake_init_body(&body->next, &r, body);
-        body->next->dir = prev_dir;
         snake->size++;
 }
 
@@ -283,8 +279,8 @@ int main (int argc, char *args[])
 
         Food food;
 
-        game_window.width = DEFAULT_WIDTH;
-        game_window.height = DEFAULT_HEIGHT;
+        game_window.w = DEFAULT_WIDTH;
+        game_window.h = DEFAULT_HEIGHT;
 
         food_move(&food);
 
@@ -309,8 +305,8 @@ int main (int argc, char *args[])
                 return 1;
 
         if (SDL_CreateWindowAndRenderer(
-                    game_window.width,
-                    game_window.height,
+                    game_window.w,
+                    game_window.h,
                             SDL_WINDOWPOS_CENTERED |
                             SDL_WINDOW_OPENGL |
                             SDL_WINDOW_INPUT_GRABBED,
