@@ -38,24 +38,30 @@ void food_move(Food *food)
 /**
  * Renders the food at the given location / point
  */
-void food_render(SDL_Renderer *renderer, Food *food)
+void food_render(SDL_Surface *window_surf, Food *food)
 {
         SDL_Surface *surf;
         SDL_Texture *text;
-        SDL_Rect rect;
-        rect = SDL_CreateRect(10, 10, food->x, food->y);
-        surf = SDL_CreateRGBSurface(
-                       0,
-                       10,
-                       10,
-                       32,
-                       0xFF000000, //rmask
-                       0x00FF0000, //bmask
-                       0x0000FF00, //gmask
-                       0x000000FF);//amask
-        SDL_FillRect(surf, NULL, 0x33AA33FF);
-        text = SDL_CreateTextureFromSurface(renderer, surf);
-        SDL_RenderCopy(renderer, text, NULL, &rect);
+        SDL_Rect r;
+
+        surf = SDL_CreateRGBSurface(0, 10, 10, 32,
+                                    0xFF000000,
+                                    0x00FF0000,
+                                    0x0000FF00,
+                                    0x000000FF);
+        r.h = 8; r.w = 8;
+        r.x = 2; r.y = 2;
+        SDL_FillRect(surf, &r, 0x66666666);
+
+        r.h = 8; r.w = 8;
+        r.x = 0; r.y = 0;
+        SDL_FillRect(surf, &r, 0x666666FF);
+
+        r.w = 10; r.h = 10;
+        r.x = food->x;
+        r.y = food->y;
+
+        SDL_BlitSurface(surf, NULL, window_surf, &r);
 }
 
 /****************** SNAKE ************************/
@@ -83,7 +89,6 @@ typedef struct Snake {
         int size;
         struct Body *body;
         SDL_Surface *surf;
-        SDL_Texture *texture;
 } Snake;
 
 /**
@@ -107,17 +112,48 @@ void snake_create(SDL_Renderer *renderer, Snake *snake)
 
         snake->size = 1;
         snake_init_body(&snake->body, &r, NULL);
-        snake->surf = SDL_CreateRGBSurface(
-                              0,
-                              10,
-                              10,
-                              32,
-                              0xFF000000, //rmask
-                              0x00FF0000, //bmask
-                              0x0000FF00, //gmask
-                              0x000000FF);//amask
-        SDL_FillRect(snake->surf, NULL, 0xAAAAAAFF);
-        snake->texture = SDL_CreateTextureFromSurface(renderer, snake->surf);
+        snake->surf = SDL_CreateRGBSurface(0, 10, 10, 32,
+                                           0xFF000000,
+                                           0x00FF0000,
+                                           0x0000FF00,
+                                           0x000000FF);
+        SDL_FillRect(snake->surf, NULL, 0x00000000);
+
+        r.h = 8;
+        r.w = 8;
+        r.x = 2;
+        r.y = 2;
+        SDL_FillRect(snake->surf, &r, 0x66666677);
+
+        r.h = 8;
+        r.w = 8;
+        r.x = 0;
+        r.y = 0;
+        SDL_FillRect(snake->surf, &r, 0x666666FF);
+
+        /*Uint8 * pixel;
+        Uint8 alpha = 255;
+        for (int x = 3; x >= 0; x--) {
+                alpha = 255 * ((float)(3 * x) / 10.0);
+                for (int y = 0; y < 10; y++) {
+                        pixel = (Uint8*)snake->surf->pixels;
+                        pixel += (y * snake->surf->pitch) + (x * sizeof(Uint32));
+                        *pixel = alpha;
+                        printf("%d %d %d %d\r\n", *pixel, pixel[sizeof(Uint8)*1],
+                               pixel[sizeof(Uint8)*2], pixel[sizeof(Uint8)*3]);
+                }
+        }
+
+        for (int x = 10; x >= 7; x--) {
+                alpha = 255 * ((float)(3 * (10 - x)) / 10.0);
+                for (int y = 0; y < 10; y++) {
+                        pixel = (Uint8*)snake->surf->pixels;
+                        pixel += (y * snake->surf->pitch) + (x * sizeof(Uint32));
+                        *pixel = alpha;
+                        printf("%d %d %d %d\r\n", *pixel, pixel[sizeof(Uint8)*1],
+                               pixel[sizeof(Uint8)*2], pixel[sizeof(Uint8)*3]);
+                }
+        }*/
 }
 
 /**
@@ -194,7 +230,9 @@ void snake_handle_input(Snake *snake, Snake_Move dir, int incr)
 
         body = snake_get_tail(snake->body);
         while (body != NULL) {
+#ifdef DEBUG
                 printf("(%d,%d),", body->value.x, body->value.y);
+#endif
 
                 if (body->prev != NULL) {
                         body->value.x = body->prev->value.x;
@@ -204,7 +242,9 @@ void snake_handle_input(Snake *snake, Snake_Move dir, int incr)
                 }
                 body = body->prev;
         }
+#ifdef DEBUG
         printf("\r\n");
+#endif
 }
 
 /**
@@ -276,6 +316,8 @@ int main (int argc, char *args[])
         SDL_bool quit = SDL_FALSE;
         SDL_Event e;
         SDL_Rect draw_rect; //  = malloc(sizeof(struct SDL_Rect));
+        SDL_Surface *window_surface;
+        SDL_Texture *game_texture;
 
         Food food;
 
@@ -304,16 +346,29 @@ int main (int argc, char *args[])
         if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
                 return 1;
 
-        if (SDL_CreateWindowAndRenderer(
-                    game_window.w,
-                    game_window.h,
-                            SDL_WINDOWPOS_CENTERED |
-                            SDL_WINDOW_OPENGL |
-                            SDL_WINDOW_INPUT_GRABBED,
-                    &window, &renderer) != 0)
-                return 2;
+        window = SDL_CreateWindow("RipTide",
+                                  SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED,
+                                  game_window.w, game_window.h,
+                                  SDL_WINDOW_SHOWN);
+        if (window == NULL) {
+                printf("ERROR CREATING WINDOW: %s", SDL_GetError());
+                return 1;
+        }
+
+        renderer = SDL_CreateRenderer(window,
+                                      -1,
+                                      SDL_RENDERER_ACCELERATED);
+        if (renderer == NULL) {
+                printf("ERROR CREATING RENDERER: %s", SDL_GetError());
+                return 1;
+        }
+
 
         SDL_SetWindowTitle(window, "RipTide");
+
+        window_surface = SDL_GetWindowSurface(window);
+        game_texture = SDL_CreateTextureFromSurface(renderer, window_surface);
 
         snake_create(renderer, &snake);
 
@@ -352,19 +407,25 @@ int main (int argc, char *args[])
                 interpolation = (float)lag / (float)ms_per_update;
 
                 SDL_RenderClear(renderer);
+                SDL_FillRect(window_surface, NULL, 0xFFBECFAE);
 
                 for (int i = 1; i <= snake.size; i++) {
                         draw_rect = *snake_body_at(&snake, i);
-                        SDL_RenderCopy(renderer, snake.texture, NULL, &draw_rect);
+                        SDL_BlitSurface(snake.surf, NULL, window_surface, &draw_rect);
+
                 }
 
-                food_render(renderer, &food);
+                food_render(window_surface, &food);
+                SDL_UpdateTexture(game_texture, NULL, window_surface->pixels, window_surface->pitch);
+                SDL_RenderCopy(renderer, game_texture, NULL, NULL);
 
                 SDL_RenderPresent(renderer);
         }
 
+
         snake_free(&snake);
 
+        SDL_DestroyTexture(game_texture);
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
