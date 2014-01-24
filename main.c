@@ -8,10 +8,6 @@
 #include "SDL_Util.h"
 #include "Snake.h"
 
-void update();
-void render(float interpolation);
-void input();
-
 /****************** FOOD *************************/
 
 typedef struct Food {
@@ -38,7 +34,15 @@ void food_render(SDL_Renderer *renderer, Food *food)
         SDL_Texture *text;
         SDL_Rect rect;
         rect = SDL_CreateRect(10, 10, food->x, food->y);
-        surf = SDL_CreateRGBSurface(0, 10, 10, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
+        surf = SDL_CreateRGBSurface(
+                       0,
+                       10,
+                       10,
+                       32,
+                       0xFF000000, //rmask
+                       0x00FF0000, //bmask
+                       0x0000FF00, //gmask
+                       0x000000FF);//amask
         SDL_FillRect(surf, NULL, 0x33AA33FF);
         text = SDL_CreateTextureFromSurface(renderer, surf);
         SDL_RenderCopy(renderer, text, NULL, &rect);
@@ -51,7 +55,7 @@ typedef enum {
         SNAKE_RIGHT,
         SNAKE_UP,
         SNAKE_DOWN
-} Snake_Direction;
+} Snake_Move;
 
 /**
  * Linked list of snake body parts
@@ -60,7 +64,7 @@ typedef struct Body {
         struct Body *next;
         struct Body *prev;
         SDL_Rect value;
-        Snake_Direction dir;
+        Snake_Move dir;
 } Body;
 
 /**
@@ -95,7 +99,15 @@ void snake_create(SDL_Renderer *renderer, Snake *snake)
 
         snake->size = 1;
         snake_init_body(&snake->body, &r, NULL);
-        snake->surf = SDL_CreateRGBSurface(0, 10, 10, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF);
+        snake->surf = SDL_CreateRGBSurface(
+                              0,
+                              10,
+                              10,
+                              32,
+                              0xFF000000, //rmask
+                              0x00FF0000, //bmask
+                              0x0000FF00, //gmask
+                              0x000000FF);//amask
         SDL_FillRect(snake->surf, NULL, 0xAAAAAAFF);
         snake->texture = SDL_CreateTextureFromSurface(renderer, snake->surf);
 }
@@ -114,7 +126,8 @@ Body * snake_get_tail(Body *body)
 }
 
 /**
- * Gets the rectangle represented at a specific point of the body or the most recently found piece if outside the bounds of the tail...
+ * Gets the rectangle represented at a specific point of the body
+ * or the most recently found piece if outside the bounds of the tail...
  */
 SDL_Rect *snake_body_at(Snake *snake, int pos)
 {
@@ -132,7 +145,7 @@ SDL_Rect *snake_body_at(Snake *snake, int pos)
         return rect;
 }
 
-void snake_do_move(Body *body, int incr, int window_w, int window_h)
+void snake_move(Body *body, int incr, int window_w, int window_h)
 {
         int x = 0;
         int y = 0;
@@ -165,14 +178,14 @@ void snake_do_move(Body *body, int incr, int window_w, int window_h)
                 body->value.y = window_h;
 }
 
-void snake_move2(Snake *snake, Snake_Direction dir, int incr, int window_w, int window_h)
+void snake_handle_input(Snake *snake, Snake_Move dir, int incr, int window_w, int window_h)
 {
         Body *body = snake->body->next;
         snake->body->dir = dir;
 
         body = snake_get_tail(snake->body);
         while (body != NULL) {
-                snake_do_move(body, incr, window_w, window_h);
+                snake_move(body, incr, window_w, window_h);
                 printf("((%d,%d)%d),", body->value.x, body->value.y, body->dir);
 
                 if (body->prev != NULL)
@@ -183,17 +196,18 @@ void snake_move2(Snake *snake, Snake_Direction dir, int incr, int window_w, int 
 }
 
 /**
- * Traverses to the end of the tail and makes it longer
+ * Increases the length of the snake by one,
+ * accomplished by moving the snake forward one whole iteration
+ * and then adding a new body piece at the end
  **/
-void snake_nibble(Snake *snake, int incr, Snake_Direction dir, int window_w, int window_h)
+void snake_nibble(Snake *snake, int incr,
+                  Snake_Move dir, int window_w, int window_h)
 {
         Body *body = snake_get_tail(snake->body);
         int x = body->value.x;
         int y = body->value.y;
-        Snake_Direction prev_dir = body->dir;
-
-        snake_move2(snake, dir, incr, window_w, window_h); // move the whole snake ahead one movement
-
+        Snake_Move prev_dir = body->dir;
+        snake_handle_input(snake, dir, incr, window_w, window_h);
         SDL_Rect r = SDL_CreateRect(10, 10, x, y);
         snake_init_body(&body->next, &r, body);
         body->next->dir = prev_dir;
@@ -240,6 +254,11 @@ int snake_collides(Snake *snake, Food *food)
         return -1;
 }
 
+/******************** SDL ******************/
+void update();
+void render(float interpolation);
+int input(SDL_Event *e, Snake_Move *);
+
 int main (int argc, char *args[])
 {
         int window_width = 300;
@@ -265,16 +284,20 @@ int main (int argc, char *args[])
         /** TIME KEEPING **/
 
         Snake snake;
-        Snake_Direction cur_dir = SNAKE_LEFT;
+        Snake_Move cur_dir = SNAKE_LEFT;
         float snake_fps = 10;
-        float snake_movement = 12; //ceil( (float)snake_speed / (float)frames_per_second );
+        float snake_movement = 12;
         float snake_ms_per_update = (1000 / snake_fps);
         unsigned int snake_lag = 0;
 
         if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
                 return 1;
 
-        if (SDL_CreateWindowAndRenderer(window_width, window_height, SDL_WINDOWPOS_CENTERED | SDL_WINDOW_SHOWN, &window, &renderer) != 0)
+        if (SDL_CreateWindowAndRenderer(
+                    window_width,
+                    window_height,
+                    SDL_WINDOWPOS_CENTERED | SDL_WINDOW_SHOWN,
+                    &window, &renderer) != 0)
                 return 2;
 
         SDL_SetWindowTitle(window, "RipTide");
@@ -288,32 +311,32 @@ int main (int argc, char *args[])
                 lag += elapsed;
 
                 SDL_PollEvent(&e);
-                if (e.type == SDL_QUIT) {
+                if (input(&e, &cur_dir) != 0)
                         quit = SDL_TRUE;
-                } else if (e.type == SDL_KEYDOWN) {
-                        if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_ESCAPE] != 0)
-                                quit = SDL_TRUE;
-
-                        if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_UP] != 0)
-                                cur_dir = SNAKE_UP;
-                        else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT] != 0)
-                                cur_dir = SNAKE_RIGHT;
-                        else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT] != 0)
-                                cur_dir = SNAKE_LEFT;
-                        else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN] != 0)
-                                cur_dir = SNAKE_DOWN;
-                }
 
                 while (lag >= ms_per_update) {
                         snake_lag += ms_per_update;
 
                         // Game runs at 60FPS snake runs at 10FPS
                         if (snake_lag >= snake_ms_per_update) {
-                                snake_move2(&snake, cur_dir, snake_movement, window_width, window_height);
+                                snake_handle_input(
+                                        &snake,
+                                        cur_dir,
+                                        snake_movement,
+                                        window_width,
+                                        window_height);
 
                                 if (snake_collides(&snake, &food) == 0) {
-                                        food_move(&food, window_width, window_height);
-                                        snake_nibble(&snake, snake_movement, cur_dir, window_width, window_height);
+                                        food_move(
+                                                &food,
+                                                window_width,
+                                                window_height);
+                                        snake_nibble(
+                                                &snake,
+                                                snake_movement,
+                                                cur_dir,
+                                                window_width,
+                                                window_height);
                                 }
                                 snake_lag -= snake_ms_per_update;
                         }
@@ -335,6 +358,31 @@ int main (int argc, char *args[])
         }
 
         snake_free(&snake);
+
+        return 0;
+}
+
+/**
+ * Handles the input from the game and returns -1 if should quit
+ * otherwise a zero that input was handled per usual
+ */
+int input(SDL_Event *e, Snake_Move *direction)
+{
+        if (e->type == SDL_QUIT)
+                return -1;
+
+        if (e->type == SDL_KEYDOWN) {
+                if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_ESCAPE] != 0)
+                        return -1;
+                else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_UP] != 0)
+                        *direction = SNAKE_UP;
+                else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT] != 0)
+                        *direction = SNAKE_RIGHT;
+                else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT] != 0)
+                        *direction = SNAKE_LEFT;
+                else if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN] != 0)
+                        *direction = SNAKE_DOWN;
+        }
 
         return 0;
 }
