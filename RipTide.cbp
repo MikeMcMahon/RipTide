@@ -41,13 +41,13 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-std=c11" />
-			<Add directory="E:/Development/dependencies/include" />
+			<Add directory="D:/Development/dependencies/include" />
 		</Compiler>
 		<Linker>
 			<Add option="-lmingw32 -lSDL2main -lSDL2" />
 			<Add library="SDL2.dll" />
-			<Add directory="E:/Development/dependencies/lib" />
-			<Add directory="E:/Development/dependencies/bin" />
+			<Add directory="D:/Development/dependencies/lib" />
+			<Add directory="D:/Development/dependencies/bin" />
 		</Linker>
 		<Unit filename="Game.h" />
 		<Unit filename="SDL_Util.c">
