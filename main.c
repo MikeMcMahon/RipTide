@@ -71,6 +71,11 @@ void food_render(SDL_Surface *window_surf, Food *food)
 /****************** SNAKE ************************/
 
 typedef enum {
+        SNAKE_DYING = 0x0001,
+        SNAKE_ALIVE = 0x0010
+} Snake_State;
+
+typedef enum {
         SNAKE_LEFT = 1,
         SNAKE_RIGHT,
         SNAKE_UP,
@@ -94,6 +99,7 @@ typedef struct Snake {
         int increment;
         struct Body *body;
         SDL_Surface *surf;
+        Snake_State state;
 } Snake;
 
 /**
@@ -172,6 +178,25 @@ Body * snake_get_tail(Body *body)
         }
 
         return abody;
+}
+
+/**
+ * Destroys the tail and sets the NEXT pointer to NULL
+ */
+void snake_pop_tail(Snake *snake)
+{
+        Body *abody = snake_get_tail(snake->body);
+
+        if (abody->prev != NULL){
+                abody = abody->prev;
+                free(abody->next);
+                abody->next = NULL;
+        } else {
+                free(abody);
+                abody = NULL;
+        }
+
+        snake->size--;
 }
 
 /**
@@ -376,7 +401,7 @@ int snake_self_intersect(Snake *snake, SDL_Rect *next_move)
 
 /******************** SDL ******************/
 
-void update(Snake *, Snake_Direction, Food *);
+void update(Snake *, Snake_Direction *, Food *);
 void render(float interpolation);
 int input(SDL_Event *e, Snake_Direction *);
 
@@ -443,6 +468,7 @@ int main (int argc, char *args[])
 
         snake_create(renderer, &snake);
         snake.increment = snake_movement;
+        snake.state = SNAKE_ALIVE;
 
         while (!quit) {
                 current = SDL_GetTicks();
@@ -459,7 +485,7 @@ int main (int argc, char *args[])
                         snake_lag += ms_per_update;
 
                         if (snake_lag >= snake_ms_per_update) {
-                                update(&snake, cur_dir, &food);
+                                update(&snake, &cur_dir, &food);
                                 snake_lag -= snake_ms_per_update;
                         }
                         lag -= ms_per_update;
@@ -497,27 +523,39 @@ int main (int argc, char *args[])
         return 0;
 }
 
-void update(Snake *snake, Snake_Direction cur_dir, Food *food) {
+void update(Snake *snake, Snake_Direction *cur_dir, Food *food) {
         SDL_Rect next_move;
+        SDL_Rect new_body;
 
-        snake_next_move(
-                snake,
-                cur_dir,
-                &next_move);
-
-        if (snake_food_intersect(&next_move, food) == 0) {
-                food_move(food);
-                snake_nibble(
+        if (snake->state == SNAKE_ALIVE) {
+                snake_next_move(
                         snake,
-                        cur_dir);
-        }
+                        *cur_dir,
+                        &next_move);
+                if (snake_food_intersect(&next_move, food) == 0) {
+                        food_move(food);
+                        snake_nibble(
+                                snake,
+                                *cur_dir);
+                }
 
-        if (snake_self_intersect(snake, &next_move) == 0) {
-                printf("Snake collides!");
-        } else {
-                snake_handle_input(
-                        snake,
-                        cur_dir);
+                if (snake_self_intersect(snake, &next_move) == 0) {
+                        snake->state = SNAKE_DYING;
+                } else {
+                        snake_handle_input(
+                                snake,
+                                *cur_dir);
+                }
+        } else if (snake->state == SNAKE_DYING) {
+                if (snake->size > 0) {
+                        snake_pop_tail(snake);
+                } else if (snake->size == 0) {
+                        new_body = SDL_CreateRect(10, 10, 156, 156);
+                        snake_init_body(&snake->body, &new_body, NULL);
+                        snake->state = SNAKE_ALIVE;
+                        snake->size++;
+                        *cur_dir = SNAKE_LEFT;
+                }
         }
 }
 
