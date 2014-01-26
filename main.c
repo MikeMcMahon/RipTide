@@ -66,6 +66,8 @@ void food_render(SDL_Surface *window_surf, Food *food)
         r.y = food->y;
 
         SDL_BlitSurface(surf, NULL, window_surf, &r);
+
+        SDL_FreeSurface(surf);
 }
 
 /****************** SNAKE ************************/
@@ -402,7 +404,7 @@ int snake_self_intersect(Snake *snake, SDL_Rect *next_move)
 /******************** SDL ******************/
 
 void update(Snake *, Snake_Direction *, Food *);
-void render(float interpolation);
+void render(SDL_Renderer *, SDL_Texture *, SDL_Surface *, float, Snake *, Food *);
 int input(SDL_Event *e, Snake_Direction *);
 
 int main (int argc, char *args[])
@@ -411,7 +413,6 @@ int main (int argc, char *args[])
         SDL_Renderer *renderer;
         SDL_bool quit = SDL_FALSE;
         SDL_Event e;
-        SDL_Rect draw_rect;
         SDL_Surface *window_surface;
         SDL_Texture *game_texture;
 
@@ -492,35 +493,41 @@ int main (int argc, char *args[])
                 }
 
                 interpolation = (float)lag / (float)ms_per_update;
-
-                SDL_RenderClear(renderer);
-                SDL_FillRect(window_surface, NULL, 0xFFBECFAE);
-
-                for (int i = 1; i <= snake.size; i++) {
-                        draw_rect = *snake_body_at(&snake, i);
-                        SDL_BlitSurface(snake.surf, NULL,
-                                        window_surface, &draw_rect);
-
-                }
-
-                food_render(window_surface, &food);
-                SDL_UpdateTexture(game_texture, NULL,
-                                  window_surface->pixels,
-                                  window_surface->pitch);
-                SDL_RenderCopy(renderer, game_texture, NULL, NULL);
-
-                SDL_RenderPresent(renderer);
+                render(renderer, game_texture, window_surface, interpolation, &snake, &food);
         }
 
 
         snake_free(&snake);
 
+        SDL_FreeSurface(snake->surf);
         SDL_DestroyTexture(game_texture);
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
 
         return 0;
+}
+
+void render(SDL_Renderer *renderer, SDL_Texture *game_texture,
+            SDL_Surface *window_surface, float interpolation,
+            Snake *snake, Food *food) {
+        SDL_Rect bounds;
+        SDL_RenderClear(renderer);
+
+        SDL_FillRect(window_surface, NULL, 0xFFBECFAE);
+
+        for (int i = 1; i <= snake->size; i++) {
+                bounds = *snake_body_at(snake, i);
+                SDL_BlitSurface(snake->surf, NULL, window_surface, &bounds);
+        }
+
+        food_render(window_surface, food);
+        SDL_UpdateTexture(game_texture, NULL,
+                          window_surface->pixels,
+                          window_surface->pitch);
+        SDL_RenderCopy(renderer, game_texture, NULL, NULL);
+
+        SDL_RenderPresent(renderer);
 }
 
 void update(Snake *snake, Snake_Direction *cur_dir, Food *food) {
