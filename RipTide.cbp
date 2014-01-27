@@ -44,11 +44,16 @@
 			<Add directory="D:/Development/dependencies/include" />
 		</Compiler>
 		<Linker>
-			<Add option="-lmingw32 -lSDL2main -lSDL2" />
+			<Add option="-lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf" />
 			<Add library="SDL2.dll" />
+			<Add library="SDL2_ttf.dll" />
 			<Add directory="D:/Development/dependencies/lib" />
 			<Add directory="D:/Development/dependencies/bin" />
 		</Linker>
+		<Unit filename="Food.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Food.h" />
 		<Unit filename="Game.h" />
 		<Unit filename="SDL_Util.c">
 			<Option compilerVar="CC" />
