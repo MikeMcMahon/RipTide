@@ -1,13 +1,11 @@
 #include "Snake.h"
 
 struct Scene *scene;
-struct Snake *snake;
+struct _Snake *snake;
 
 void Snake_SetScene(struct Scene **ascene)
 {
         scene = *ascene;
-        int w = scene->w;
-        int h = scene->h;
 }
 
 /**
@@ -15,7 +13,7 @@ void Snake_SetScene(struct Scene **ascene)
  */
 void Snake_InitBody(Body **out_body, SDL_Rect *rect, Body *prev)
 {
-        struct Body* new_body = malloc(sizeof(struct Body));
+        struct _Body* new_body = malloc(sizeof(struct _Body));
         new_body->next = NULL;
         new_body->prev = prev;
         new_body->value = *rect;
@@ -25,9 +23,9 @@ void Snake_InitBody(Body **out_body, SDL_Rect *rect, Body *prev)
 /**
  * Creates a new snake
  */
-struct Snake* Snake_Create(SDL_Renderer *renderer)
+struct _Snake* Snake_Create(SDL_Renderer *renderer)
 {
-        snake = malloc(sizeof(struct Snake));
+        snake = malloc(sizeof(struct _Snake));
 
         SDL_Rect r = SDL_CreateRect(10, 10, 156, 156);
 
@@ -109,10 +107,6 @@ SDL_Rect *Snake_BodyAt(Snake *snake, int pos)
  */
 void Snake_TranslateBody(SDL_Rect * body, Snake_Direction dir)
 {
-        int w, h;
-        w = scene->w;
-        h = scene->h;
-
         if (body->x >= scene->w && dir == SNAKE_RIGHT)
                 body->x = (body->x - scene->w);
 
@@ -234,7 +228,7 @@ void Snake_Nibble(Snake_Direction dir)
  */
 int Snake_Free()
 {
-        struct Body *abody = snake->body;
+        struct _Body *abody = snake->body;
 
         while (abody != NULL) {
                 if (abody->next == NULL) {

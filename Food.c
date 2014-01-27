@@ -1,10 +1,9 @@
 #include "Food.h"
 
-
 /**
  * Moves the food to a new location
  */
-void food_move(Food *food)
+void Food_Move(Food *food)
 {
         srand(time(NULL));
         food->x = 12 * (rand() % 25);
@@ -14,7 +13,7 @@ void food_move(Food *food)
 /**
  * Renders the food at the given location / point
  */
-void food_render(SDL_Surface *window_surf, Food *food)
+void Food_Render(SDL_Surface *window_surf, Food *food)
 {
         SDL_Surface *surf;
         SDL_Rect r;

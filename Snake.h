@@ -1,52 +1,12 @@
 #pragma once
 
 #include "SDL2/SDL.h"
-
+#include "SDL_Util.h"
 #include "Game.h"
-#include "Food.h"
 
+void Snake_SetScene(Scene **);
 
-/**
- * Defines the current state of the snake
- */
-typedef enum {
-        SNAKE_DYING = 0x0001,
-        SNAKE_ALIVE = 0x0010
-} Snake_State;
-
-/**
- * Defines the current direction the snake is moving
- */
-typedef enum {
-        SNAKE_LEFT = 1,
-        SNAKE_RIGHT,
-        SNAKE_UP,
-        SNAKE_DOWN
-} Snake_Direction;
-
-/**
- * Linked list of snake body parts
- */
-typedef struct Body {
-        struct Body *next;
-        struct Body *prev;
-        SDL_Rect value;
-} Body;
-
-/**
- * The game snake itself
- */
-typedef struct Snake {
-        int size;
-        int increment;
-        struct Body *body;
-        SDL_Surface *surf;
-        Snake_State state;
-} Snake;
-
-void Snake_SetScene(struct Scene **);
-
-struct Snake * Snake_Create(SDL_Renderer *renderer);
+struct _Snake * Snake_Create(SDL_Renderer *renderer);
 void Snake_InitBody(Body **out_body, SDL_Rect *rect, Body *prev);
 int Snake_Free();
 

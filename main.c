@@ -1,14 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_ttf.h"
 
 #include "SDL_Util.h"
-#include "Snake.h"
+
+#include "Game.h"
 #include "Food.h"
+#include "Snake.h"
 
 #define DEFAULT_WIDTH 312
 #define DEFAULT_HEIGHT 312
@@ -43,7 +40,6 @@ int main (int argc, char *args[])
         Food food;
 
 
-        food_move(&food);
 
         /** TIME KEEPING **/
         unsigned int frames_per_second = 60;
@@ -55,7 +51,7 @@ int main (int argc, char *args[])
         float interpolation;
         /** TIME KEEPING **/
 
-        Snake *snake;
+        Snake * snake;
         Snake_Direction cur_dir = SNAKE_LEFT;
         float snake_fps = 10;
         float snake_movement = 12;
@@ -119,6 +115,7 @@ int main (int argc, char *args[])
         font_location.x = (DEFAULT_WIDTH / 2) - (font_location.w / 2);
         font_location.y = 0;
 
+        Food_Move(&food);
         while (!quit) {
                 current = SDL_GetTicks();
                 elapsed = current - previous;
@@ -178,7 +175,7 @@ void render(SDL_Renderer *renderer, SDL_Texture *game_texture,
                 SDL_BlitSurface(snake->surf, NULL, window_surface, &bounds);
         }
 
-        food_render(window_surface, food);
+        Food_Render(window_surface, food);
 }
 
 void update(Snake *snake, Snake_Direction *cur_dir, Food *food) {
@@ -188,7 +185,7 @@ void update(Snake *snake, Snake_Direction *cur_dir, Food *food) {
         if (snake->state == SNAKE_ALIVE) {
                 Snake_MoveNext(*cur_dir, &next_move);
                 if (Snake_IntersectFood(&next_move, food) == 0) {
-                        food_move(food);
+                        Food_Move(food);
                         Snake_Nibble(*cur_dir);
                 }
 
