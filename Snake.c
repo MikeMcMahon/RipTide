@@ -1,9 +1,8 @@
 #include "Snake.h"
 
-struct Scene *scene;
-struct _Snake *snake;
+struct _Scene *scene;
 
-void Snake_SetScene(struct Scene **ascene)
+void Snake_SetScene(struct _Scene **ascene)
 {
         scene = *ascene;
 }
@@ -23,9 +22,9 @@ void Snake_InitBody(Body **out_body, SDL_Rect *rect, Body *prev)
 /**
  * Creates a new snake
  */
-struct _Snake* Snake_Create(SDL_Renderer *renderer)
+struct _Snake* Snake_Create()
 {
-        snake = malloc(sizeof(struct _Snake));
+        Snake *snake = malloc(sizeof(struct _Snake));
 
         SDL_Rect r = SDL_CreateRect(10, 10, 156, 156);
 
@@ -123,7 +122,7 @@ void Snake_TranslateBody(SDL_Rect * body, Snake_Direction dir)
 /**
  * Gets the next move made by the snake
  */
-void Snake_MoveNext(Snake_Direction dir, SDL_Rect *out_rect)
+void Snake_MoveNext(Snake *snake, Snake_Direction dir, SDL_Rect *out_rect)
 {
         int x = 0;
         int y = 0;
@@ -139,6 +138,8 @@ void Snake_MoveNext(Snake_Direction dir, SDL_Rect *out_rect)
                 break;
         case SNAKE_DOWN:
                 y += snake->increment;
+                break;
+        default:
                 break;
         }
 
@@ -170,6 +171,8 @@ void Snake_Move(Body *body, Snake_Direction dir, int incr)
         case SNAKE_DOWN:
                 y += incr;
                 break;
+        default:
+                break;
         }
 
         body->value.x += x;
@@ -181,10 +184,11 @@ void Snake_Move(Body *body, Snake_Direction dir, int incr)
 /**
  * Handles input for the snake
  */
-void Snake_HandleInput(Snake_Direction dir)
+void Snake_HandleInput(Snake * snake, Snake_Direction dir)
 {
         Body *body = snake->body->next;
 
+        snake->dir_consumed = 0;
         body = Snake_GetTail(snake->body);
         while (body != NULL) {
 #ifdef DEBUG
@@ -207,17 +211,47 @@ void Snake_HandleInput(Snake_Direction dir)
 #endif
 }
 
+int Snake_MoveValid(Snake *snake, Snake_Direction cur_dir, Snake_Direction new_dir)
+{
+        if (snake->dir_consumed != 0)
+                return -1;
+
+        switch(cur_dir) {
+        case SNAKE_LEFT:
+                if (new_dir == SNAKE_RIGHT && snake->size > 1)
+                        return -1;
+                break;
+        case SNAKE_RIGHT:
+                if (new_dir == SNAKE_LEFT && snake->size > 1)
+                        return -1;
+                break;
+        case SNAKE_UP:
+                if (new_dir == SNAKE_DOWN && snake->size > 1)
+                        return -1;
+                break;
+        case SNAKE_DOWN:
+                if (new_dir == SNAKE_UP && snake->size > 1)
+                        return -1;
+                break;
+        default:
+                return -1;
+        }
+
+        snake->dir_consumed = -1;
+        return 0;
+}
+
 /**
  * Increases the length of the snake by one,
  * accomplished by moving the snake forward one whole iteration
  * and then adding a new body piece at the end
  **/
-void Snake_Nibble(Snake_Direction dir)
+void Snake_Nibble(Snake *snake, Snake_Direction dir)
 {
         Body *body = Snake_GetTail(snake->body);
         int x = body->value.x;
         int y = body->value.y;
-        Snake_HandleInput(dir);
+        Snake_HandleInput(snake, dir);
         SDL_Rect r = SDL_CreateRect(10, 10, x, y);
         Snake_InitBody(&body->next, &r, body);
         snake->size++;
@@ -226,7 +260,7 @@ void Snake_Nibble(Snake_Direction dir)
 /**
  * frees all memory allocated to the snake
  */
-int Snake_Free()
+int Snake_Free(Snake *snake)
 {
         struct _Body *abody = snake->body;
 
@@ -241,6 +275,9 @@ int Snake_Free()
                 if (abody != NULL)
                         free(abody->prev);
         }
+
+        SDL_FreeSurface(snake->surf);
+        free(snake);
 
         return 0;
 }
@@ -266,7 +303,7 @@ int Snake_IntersectFood(SDL_Rect *head, Food *food)
 /**
  * returns 0 if the snake collides with itself, otherwise -1
  */
-int Snake_IntersectSelf(SDL_Rect *next_move)
+int Snake_IntersectSelf(Snake *snake, SDL_Rect *next_move)
 {
         Body *abody = snake->body->next;
 

@@ -1,41 +1,65 @@
 #include "Food.h"
 
 /**
- * Moves the food to a new location
+ * Generate food x,y coordinates
  */
-void Food_Move(Food *food)
+void Food_GenerateLoc(Food *food)
 {
-        srand(time(NULL));
         food->x = 12 * (rand() % 25);
         food->y = 12 * (rand() % 25);
-}
+        food->bounds.x = food->x;
+        food->bounds.y = food->y;}
 
 /**
- * Renders the food at the given location / point
+ * Creates the food
  */
-void Food_Render(SDL_Surface *window_surf, Food *food)
+struct _Food * Food_Create()
 {
-        SDL_Surface *surf;
         SDL_Rect r;
+        Food *food = malloc(sizeof(struct _Food));
+        Food_GenerateLoc(food);
 
-        surf = SDL_CreateRGBSurface(0, 10, 10, 32,
+        food->bounds.w = 10;
+        food->bounds.h = 10;
+
+        food->surf = SDL_CreateRGBSurface(0, 10, 10, 32,
                                     0xFF000000,
                                     0x00FF0000,
                                     0x0000FF00,
                                     0x000000FF);
         r.h = 8; r.w = 8;
         r.x = 2; r.y = 2;
-        SDL_FillRect(surf, &r, 0x66666666);
+        SDL_FillRect(food->surf, &r, 0x66666666);
 
         r.h = 8; r.w = 8;
         r.x = 0; r.y = 0;
-        SDL_FillRect(surf, &r, 0x666666FF);
+        SDL_FillRect(food->surf, &r, 0x666666FF);
 
-        r.w = 10; r.h = 10;
-        r.x = food->x;
-        r.y = food->y;
+        return food;
+}
 
-        SDL_BlitSurface(surf, NULL, window_surf, &r);
+/**
+ * Cleans up the food lol
+ */
+void Food_Free(Food *food)
+{
+        SDL_FreeSurface(food->surf);
+        free(food);
+}
 
-        SDL_FreeSurface(surf);
+
+/**
+ * Moves the food to a new location
+ */
+void Food_Move(Food *food, Snake *snake)
+{
+        Food_GenerateLoc(food);
+        struct _Body *body = (snake)->body;
+        while (body != NULL) {
+                if (body->value.x == food->x && body->value.y == food->y) {
+                        Food_Move(food, snake);
+                        break;
+                }
+                body = body->next;
+        }
 }

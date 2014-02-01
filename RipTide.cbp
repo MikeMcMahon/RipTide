@@ -39,6 +39,8 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-Wmain" />
+			<Add option="-Wextra" />
 			<Add option="-Wall" />
 			<Add option="-std=c11" />
 			<Add directory="D:/Development/dependencies/include" />

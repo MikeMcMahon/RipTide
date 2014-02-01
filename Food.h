@@ -5,12 +5,10 @@
 #include "SDL2/SDL.h"
 #include "Game.h"
 
+struct _Food * Food_Create();
+void Food_Free(Food *);
+
 /**
  * Moves the food to a new location
  */
-void Food_Move(Food *);
-
-/**
- * Renders the food at the given location / point
- */
-void Food_Render(SDL_Surface *, Food *);
+void Food_Move(Food *, Snake *);
