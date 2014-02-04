@@ -10,8 +10,8 @@ Profiled with Dr.Memory (on windows, no Valgrind!)
 Build &amp; Run
 ===============
 
-* download [libsdl (mingw version)]()
-* download [sdl_ttf (mingw version)]()
+* download [libsdl (mingw version)](http://www.libsdl.org/download-2.0.php)
+* download [sdl_ttf (mingw version)](http://libsdl.org/projects/SDL_ttf/)
 * Place includes/bin/lib  dirs in your usual place
 * Compiler Settings
 * Standards = C11
