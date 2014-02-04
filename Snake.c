@@ -216,6 +216,9 @@ int Snake_MoveValid(Snake *snake, Snake_Direction cur_dir, Snake_Direction new_d
         if (snake->dir_consumed != 0)
                 return -1;
 
+        if (cur_dir == new_dir)
+                return -1;
+
         switch(cur_dir) {
         case SNAKE_LEFT:
                 if (new_dir == SNAKE_RIGHT && snake->size > 1)

@@ -30,8 +30,13 @@ Snake_Direction Move_Pop()
         else
                 snake_moves[0] = snake_moves[1];
 
-        snake_moves[1] = SNAKE_NOE;
+        snake_moves[1] = SNAKE_NONE;
         return d;
+}
+
+Snake_Direction * Move_Peek()
+{
+        return &snake_moves[0];
 }
 
 int Scene_Create(Scene **outscene, int w, int h)
@@ -76,10 +81,9 @@ int Scene_Create(Scene **outscene, int w, int h)
 
 /******************** SDL ******************/
 
-void update(Snake *, Snake_Direction *, Food *);
+void update(Snake *, Food *);
 void render(Snake *, Food *);
-int processInput(Snake *, SDL_Event *e, Snake_Direction *);
-
+int processInput(Snake *, SDL_Event *);
 void cleanup(Snake *, Food *);
 
 int main (int argc, char *args[])
@@ -95,15 +99,12 @@ int main (int argc, char *args[])
         unsigned int current = 0;
         unsigned int lag = 0;
         unsigned int elapsed = 0;
-        //float interpolation;
         /** TIME KEEPING **/
 
         Snake * snake;
-        Snake_Direction cur_dir = SNAKE_LEFT;
-        float snake_fps = 20;
+        float snake_fps = 16;
         float snake_movement = 12;
         float snake_ms_per_update = (1000 / snake_fps);
-        //float snake_move_per_update =
 
         srand(time(NULL));
 
@@ -113,7 +114,7 @@ int main (int argc, char *args[])
         if (Scene_Create(&scene, DEFAULT_WIDTH, DEFAULT_HEIGHT) != 0)
                 return 1;
 
-         snake = Snake_Create(scene->renderer);
+        snake = Snake_Create(scene->renderer);
         Snake_SetScene(&scene);
         snake->increment = snake_movement;
         snake->state = SNAKE_ALIVE;
@@ -142,6 +143,7 @@ int main (int argc, char *args[])
         font_location.y = 0;
 
         Food_Move(food, snake);
+        Move_Add(SNAKE_LEFT);
 
         while (!quit) {
                 current = SDL_GetTicks();
@@ -150,11 +152,11 @@ int main (int argc, char *args[])
                 lag += elapsed;
 
                 SDL_PollEvent(&e);
-                if (processInput(snake, &e, &cur_dir) != 0)
+                if (processInput(snake, &e) != 0)
                         quit = SDL_TRUE;
 
                 while (lag >= snake_ms_per_update) {
-                        update(snake, &cur_dir, food);
+                        update(snake, food);
                         lag -= snake_ms_per_update;
                 }
 
@@ -210,7 +212,7 @@ void render(Snake *snake, Food *food) {
         SDL_BlitSurface(food->surf, NULL, scene->window_surface, &food->bounds);
 }
 
-void update(Snake *snake, Snake_Direction *cur_dir, Food *food) {
+void update(Snake *snake, Food *food) {
         SDL_Rect next_move;
         SDL_Rect new_body;
 
@@ -249,7 +251,7 @@ void update(Snake *snake, Snake_Direction *cur_dir, Food *food) {
  * Handles the input from the game and returns -1 if should quit
  * otherwise a zero that input was handled per usual
  */
-int processInput(Snake *snake, SDL_Event *e, Snake_Direction *dir)
+int processInput(Snake *snake, SDL_Event *e)
 {
         Snake_Direction new_dir = SNAKE_NONE;
 
@@ -277,8 +279,8 @@ int processInput(Snake *snake, SDL_Event *e, Snake_Direction *dir)
                         new_dir = SNAKE_NONE;
                 }
 
-                if (Snake_MoveValid(snake, *dir, new_dir) == 0)
-                        Move_Add(new_dir);//*dir = new_dir;
+                if (Snake_MoveValid(snake, *Move_Peek(), new_dir) == 0)
+                        Move_Add(new_dir);
         }
 
         return 0;
