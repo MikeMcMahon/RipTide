@@ -5,8 +5,8 @@
  */
 void Food_GenerateLoc(Food *food)
 {
-        food->x = 12 * (rand() % 25);
-        food->y = 12 * (rand() % 25);
+        food->x = 10 * (rand() % 25);
+        food->y = 10 * (rand() % 25);
         food->bounds.x = food->x;
         food->bounds.y = food->y;}
 
@@ -27,13 +27,12 @@ struct _Food * Food_Create()
                                     0x00FF0000,
                                     0x0000FF00,
                                     0x000000FF);
-        r.h = 8; r.w = 8;
-        r.x = 2; r.y = 2;
-        SDL_FillRect(food->surf, &r, 0x66666666);
-
-        r.h = 8; r.w = 8;
+        r.h = 10; r.w = 10;
         r.x = 0; r.y = 0;
         SDL_FillRect(food->surf, &r, 0x666666FF);
+
+        SDL_GridFilter(food->surf->pixels, food->surf->pitch, 0x77, 10, 10, 4);
+
 
         return food;
 }

@@ -26,7 +26,7 @@ struct _Snake* Snake_Create()
 {
         Snake *snake = malloc(sizeof(struct _Snake));
 
-        SDL_Rect r = SDL_CreateRect(10, 10, 156, 156);
+        SDL_Rect r = SDL_CreateRect(10, 10, 150, 150);
 
         snake->size = 1;
         Snake_InitBody(&snake->body, &r, NULL);
@@ -37,13 +37,14 @@ struct _Snake* Snake_Create()
                                            0x000000FF);
         SDL_FillRect(snake->surf, NULL, 0x00000000);
 
-        r.h = 8; r.w = 8;
-        r.x = 2; r.y = 2;
-        SDL_FillRect(snake->surf, &r, 0x66666677);
-
-        r.h = 8; r.w = 8;
+        r.h = 10; r.w = 10;
         r.x = 0; r.y = 0;
         SDL_FillRect(snake->surf, &r, 0x666666FF);
+
+        SDL_GridFilter(
+               snake->surf->pixels,
+               snake->surf->pitch,
+               0x77, 10, 10, 4);
 
         return snake;
 }

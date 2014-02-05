@@ -7,9 +7,8 @@
 #include "Food.h"
 #include "Snake.h"
 
-#define DEFAULT_WIDTH 312
-#define DEFAULT_HEIGHT 312
-#define MAX_SPRITES 1024
+#define DEFAULT_WIDTH 250
+#define DEFAULT_HEIGHT 250
 
 Scene *scene;
 Snake_Direction snake_moves[2] = { SNAKE_NONE, SNAKE_NONE };
@@ -103,7 +102,7 @@ int main (int argc, char *args[])
 
         Snake * snake;
         float snake_fps = 16;
-        float snake_movement = 12;
+        float snake_movement = 10;
         float snake_ms_per_update = (1000 / snake_fps);
 
         srand(time(NULL));
@@ -159,8 +158,6 @@ int main (int argc, char *args[])
                         update(snake, food);
                         lag -= snake_ms_per_update;
                 }
-
-                //interpolation = (float)lag / (float)ms_per_update;
 
                 SDL_RenderClear(scene->renderer);
                 render(snake, food);

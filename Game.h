@@ -16,8 +16,8 @@ typedef enum {
 } GameState;
 
 typedef struct _Scene{
-        unsigned int w;
-        unsigned int h;
+        int w;
+        int h;
         GameState state;
         SDL_Window *window;
         SDL_Surface *window_surface;
