@@ -141,7 +141,8 @@ int main (int argc, char *args[])
         font_location.x = (DEFAULT_WIDTH / 2) - (font_location.w / 2);
         font_location.y = 0;
 
-        Food_Move(food, snake);
+        Food_GenerateLoc(food);
+        //Food_Move(food, snake);
         Move_Add(SNAKE_LEFT);
 
         while (!quit) {
@@ -217,7 +218,8 @@ void update(Snake *snake, Food *food) {
 
         if (snake->state == SNAKE_EATING) {
                 snake->state = SNAKE_ALIVE;
-                Food_Move(food, snake);
+                Food_GenerateLoc(food);
+                //Food_Move(food, snake);
                 Snake_Nibble(snake, dir);
                 return;
         }

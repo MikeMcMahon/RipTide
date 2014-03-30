@@ -23,7 +23,7 @@ typedef struct _Scene{
         SDL_Surface *window_surface;
         SDL_Renderer *renderer;
         SDL_Texture *texture;
-}Scene;
+} Scene;
 
 int Scene_Create(Scene **, int, int);
 

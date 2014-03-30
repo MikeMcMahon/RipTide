@@ -1,26 +1,28 @@
 #include "Food.h"
+#include "SDL_Util.h"
 
 /**
  * Generate food x,y coordinates
  */
 void Food_GenerateLoc(Food *food)
 {
-        food->x = 10 * (rand() % 25);
-        food->y = 10 * (rand() % 25);
-        food->bounds.x = food->x;
-        food->bounds.y = food->y;}
+        int x = 10 * (rand() % 25);
+        int y = 10 * (rand() % 25);
+        food->x = x;
+        food->y = y;
+        food->bounds.x = x;
+        food->bounds.y = y;
+}
 
 /**
  * Creates the food
  */
 struct _Food * Food_Create()
 {
-        SDL_Rect r;
-        Food *food = malloc(sizeof(struct _Food));
+        SDL_Rect r = SDL_CreateRect(10, 10, 0, 0);
+        struct _Food *food = malloc(sizeof(struct _Food));
+        food->bounds = r;
         Food_GenerateLoc(food);
-
-        food->bounds.w = 10;
-        food->bounds.h = 10;
 
         food->surf = SDL_CreateRGBSurface(0, 10, 10, 32,
                                     0xFF000000,
@@ -31,14 +33,14 @@ struct _Food * Food_Create()
         r.x = 0; r.y = 0;
         SDL_FillRect(food->surf, &r, 0x666666FF);
 
-        SDL_GridFilter(food->surf->pixels, food->surf->pitch, 0x77, 10, 10, 4);
+        SDL_GridFilter(food->surf->pixels, food->surf->pitch, 0xAA, 10, 10, 4);
 
 
         return food;
 }
 
 /**
- * Cleans up the food lol
+ * Cleans up the food
  */
 void Food_Free(Food *food)
 {
@@ -53,7 +55,7 @@ void Food_Free(Food *food)
 void Food_Move(Food *food, Snake *snake)
 {
         Food_GenerateLoc(food);
-        struct _Body *body = (snake)->body;
+        Body *body = (snake)->body;
         while (body != NULL) {
                 if (body->value.x == food->x && body->value.y == food->y) {
                         Food_Move(food, snake);

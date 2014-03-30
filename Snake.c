@@ -268,6 +268,8 @@ int Snake_Free(Snake *snake)
 {
         struct _Body *abody = snake->body;
 
+        // free the previous piece while traversing to the end
+        // of the snake
         while (abody != NULL) {
                 if (abody->next == NULL) {
                         free(abody);
